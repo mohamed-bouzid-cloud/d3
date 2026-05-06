@@ -1,0 +1,42 @@
+/* aero-medical global theme */
+:root {
+  --cobalt: #2563eb;
+  --emerald: #10b981;
+  --amber: #f59e0b;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-100: #f1f5f9;
+}
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.8rem;
+  border-radius: 12px;
+  font-weight: 700 !important;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary { 
+  background: #2563eb !important; 
+  color: white !important; 
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:hover { 
+  transform: translateY(-2px);
+  background: #1d4ed8 !important;
+}
+
+.btn-lg { padding: 1.2rem 2.5rem; font-size: 1.1rem; }

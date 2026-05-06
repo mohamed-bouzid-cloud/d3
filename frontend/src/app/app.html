@@ -1,0 +1,325 @@
+<!-- Modal Form (Top Level for max-z-index) -->
+<div class="overlay" *ngIf="showForm()" style="z-index: 9999 !important;">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ editingId() ? 'Edit' : 'Create' }} {{ activeTab() | slice:0:-1 | titlecase }}</h2>
+      <button class="btn-close" (click)="showForm.set(false)">&times;</button>
+    </div>
+    
+    <form (ngSubmit)="save()" #fhirForm="ngForm">
+      
+      <!-- Patient Form -->
+      <div *ngIf="activeTab() === 'patients' && formModel?.resourceType === 'Patient'">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Given Name</label>
+            <input [(ngModel)]="formModel.name[0].given[0]" name="given" required>
+          </div>
+          <div class="form-group">
+            <label>Family Name</label>
+            <input [(ngModel)]="formModel.name[0].family" name="family" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Gender</label>
+            <select [(ngModel)]="formModel.gender" name="gender">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Birth Date</label>
+            <input type="date" [(ngModel)]="formModel.birthDate" name="birthDate" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Observation Form -->
+      <div *ngIf="activeTab() === 'observations' && formModel?.resourceType === 'Observation'">
+        <div class="form-group">
+          <label>Patient (Link)</label>
+          <select [(ngModel)]="formModel.subject.reference" name="subject_ref" required>
+            <option value="" disabled>Select a patient...</option>
+            <option *ngFor="let p of patientList()" [value]="'Patient/' + p.id">
+              {{ p.name?.[0]?.family }} {{ p.name?.[0]?.given?.[0] }} ({{ p.id | slice:0:8 }})
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vitals Type</label>
+          <select [(ngModel)]="formModel.code.coding[0].display" name="obs_type" (change)="formModel.code.coding[0].code = formModel.code.coding[0].display.toLowerCase().replace(' ', '-')">
+            <option value="Blood Pressure">Blood Pressure</option>
+            <option value="Heart Rate">Heart Rate</option>
+            <option value="Temperature">Temperature</option>
+            <option value="Weight">Weight</option>
+            <option value="Height">Height</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Value</label>
+            <input type="number" [(ngModel)]="formModel.valueQuantity.value" name="val" required>
+          </div>
+          <div class="form-group">
+            <label>Unit</label>
+            <input [(ngModel)]="formModel.valueQuantity.unit" name="unit" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Practitioner Form -->
+      <div *ngIf="activeTab() === 'practitioners' && formModel?.resourceType === 'Practitioner'">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Family Name</label>
+            <input [(ngModel)]="formModel.name[0].family" name="p_family" required>
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select [(ngModel)]="formModel.role" name="p_role">
+              <option value="doctor">Doctor</option>
+              <option value="nurse">Nurse</option>
+              <option value="pharmacist">Pharmacist</option>
+              <option value="specialist">Specialist</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Specialty</label>
+          <input [(ngModel)]="formModel.specialty" name="p_specialty" placeholder="e.g. Cardiology">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="formModel.email" name="p_email">
+          </div>
+          <div class="form-group">
+            <label>Active</label>
+            <select [(ngModel)]="formModel.active" name="p_active">
+              <option [ngValue]="true">Yes</option>
+              <option [ngValue]="false">No</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Encounter Form -->
+      <div *ngIf="activeTab() === 'encounters' && formModel?.resourceType === 'Encounter'">
+        <div class="form-group">
+          <label>Patient</label>
+          <select [(ngModel)]="formModel.subject.reference" name="e_subject" required>
+            <option value="" disabled>Select patient...</option>
+            <option *ngFor="let p of patientList()" [value]="'Patient/' + p.id">
+              {{ p.name?.[0]?.family }} {{ p.name?.[0]?.given?.[0] }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Practitioner</label>
+          <select [(ngModel)]="formModel.participant[0].individual.reference" name="e_prac">
+            <option value="" disabled>Select practitioner...</option>
+            <option *ngFor="let pr of practitionerList()" [value]="'Practitioner/' + pr.id">
+               {{ pr.name?.[0]?.family }} {{ pr.name?.[0]?.given?.[0] }} ({{ pr.role }})
+            </option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="formModel.status" name="e_status">
+              <option value="planned">Planned</option>
+              <option value="in-progress">In Progress</option>
+              <option value="finished">Finished</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Class</label>
+            <select [(ngModel)]="formModel.class.code" name="e_class">
+              <option value="AMB">Ambulatory</option>
+              <option value="EMER">Emergency</option>
+              <option value="IMP">Inpatient</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reason / Note</label>
+          <textarea [(ngModel)]="formModel.reasonCode[0].text" name="e_reason" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary" [disabled]="!fhirForm.form.valid">
+          {{ editingId() ? 'Save Changes' : 'Create Resource' }}
+        </button>
+        <button type="button" class="btn btn-outline" (click)="showForm.set(false)">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="fhir-container">
+  
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="material-icons">health_and_safety</span>
+      FHIR Master
+    </div>
+    
+    <nav>
+      <div 
+        class="nav-item" 
+        [class.active]="activeTab() === 'patients'"
+        (click)="setTab('patients')">
+        Patients
+      </div>
+      <div 
+        class="nav-item" 
+        [class.active]="activeTab() === 'observations'"
+        (click)="setTab('observations')">
+        Observations
+      </div>
+      <div 
+        class="nav-item" 
+        [class.active]="activeTab() === 'practitioners'"
+        (click)="setTab('practitioners')">
+        Practitioners
+      </div>
+      <div 
+        class="nav-item" 
+        [class.active]="activeTab() === 'encounters'"
+        (click)="setTab('encounters')">
+        Encounters
+      </div>
+    </nav>
+
+    <div style="margin-top: auto;">
+      <div class="nav-item" (click)="logout()" *ngIf="auth.currentUser()">
+        Logout ({{ auth.currentUser() }})
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="header">
+      <div class="title-group">
+        <h1>{{ activeTab() | titlecase }} Hub</h1>
+        <p class="subtitle">Managing real-time FHIR clinical resources</p>
+      </div>
+      <button class="btn btn-primary btn-lg" (click)="openCreateForm()">
+        <span class="material-icons">add</span>
+        New {{ activeTab() | slice:0:-1 | titlecase }}
+      </button>
+    </header>
+
+    <!-- Stat Grid (Core 4) -->
+    <div class="stat-grid">
+      <div class="stat-card cobalt">
+        <span class="material-icons">people</span>
+        <div class="stat-info">
+          <label>Patients</label>
+          <div class="value">{{ totalPatients() }}</div>
+        </div>
+      </div>
+      <div class="stat-card emerald">
+        <span class="material-icons">badge</span>
+        <div class="stat-info">
+          <label>Practitioners</label>
+          <div class="value">{{ activePractitioners() }}</div>
+        </div>
+      </div>
+      <div class="stat-card amber">
+        <span class="material-icons">event_upcoming</span>
+        <div class="stat-info">
+          <label>Encounters</label>
+          <div class="value">{{ activeEncounters() }}</div>
+        </div>
+      </div>
+      <div class="stat-card slate">
+        <span class="material-icons">monitor_heart</span>
+        <div class="stat-info">
+          <label>Observations</label>
+          <div class="value">{{ totalObservations() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search/Filter -->
+    <div class="search-section">
+      <div class="search-box">
+        <span class="material-icons">search</span>
+        <input 
+          type="text" 
+          placeholder="Search resources..." 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event)">
+      </div>
+    </div>
+
+    <!-- DATA AREA -->
+    <div class="glass-shell">
+      
+      <!-- LOADING STATE -->
+      <div *ngIf="loading()" class="loading-state">
+        <div class="spinner"></div>
+        <p>Fetching clinical data from Django...</p>
+      </div>
+
+      <!-- EMPTY STATE (Shows if no data) -->
+      <div *ngIf="!loading() && resources().length === 0" class="empty-state">
+         <span class="material-icons" style="font-size: 4rem; color: #cbd5e1;">inventory_2</span>
+         <h3>No {{ activeTab() }} found</h3>
+         <p>There are no records in the database or the connection failed.</p>
+         <button class="btn btn-primary" (click)="openCreateForm()" style="margin-top: 1rem;">
+           + CREATE YOUR FIRST {{ activeTab() | slice:0:-1 | uppercase }}
+         </button>
+      </div>
+      
+      <!-- DATA TABLE -->
+      <table *ngIf="!loading() && resources().length > 0">
+        <thead>
+          <tr>
+            <th>Identity / Code</th>
+            <th>Type / Class</th>
+            <th>Details / Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let res of filteredResources()">
+            <td>
+              <div class="primary-text">{{ getDisplayName(res) }}</div>
+              <div class="secondary-text">{{ res.id }}</div>
+            </td>
+            <td>
+              <span class="badge" [class]="res.resourceType">
+                {{ res.resourceType === 'Observation' ? res.code?.coding?.[0]?.display : res.resourceType }}
+              </span>
+            </td>
+            <td>
+              <div *ngIf="res.resourceType === 'Patient'">{{ res.gender }} • {{ res.birthDate }}</div>
+              <div *ngIf="res.resourceType === 'Observation'">{{ res.valueQuantity?.value }} {{ res.valueQuantity?.unit }}</div>
+              <div *ngIf="res.resourceType === 'Practitioner'">{{ res.role }} • {{ res.specialty }}</div>
+              <div *ngIf="res.resourceType === 'Encounter'">{{ res.status }} ({{ res.class?.display }})</div>
+            </td>
+            <td class="row-actions">
+              <button class="btn-action btn-edit" (click)="openEditForm(res)" title="Update">
+                <span class="material-icons">edit</span>
+                <span class="btn-text">EDIT</span>
+              </button>
+              <button class="btn-action btn-delete" (click)="delete(res.id)" title="Delete">
+                <span class="material-icons">delete</span>
+                <span class="btn-text">DEL</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
