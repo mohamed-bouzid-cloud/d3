@@ -1,0 +1,23 @@
+# Global ignore
+.DS_Store
+Thumbs.db
+~$*.docx
+~$*.doc
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+
+# Backend
+d3/venv/
+d3/env/
+d3/.env
+d3/__pycache__/
+d3/*.pyc
+d3/db.sqlite3
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
